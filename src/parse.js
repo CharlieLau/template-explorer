@@ -5,154 +5,112 @@ const TEXT = /^[\w\s]+/
 const PreTag = /^\<\w+.*\>/
 const EndTag = /^\<\/\w+.*\>/
 
-
 const Condition = /<%(?:\s?)+(\w+)(?:\s?)+\((.*)\).*%>/
+const TokenType = {
+    PreBlock: 2,
+    PreTag: 1,
+    EqualBlock: 2,
+    text2: 3
+}
 
-const HasChildBlock = ['if', 'for']
+
 
 class Token {
-    constructor(type, value = '') {
+    constructor(type, value = '', unary = false) {
         this.type = type;
         this.value = value
+        this.unary = unary // 是否一元标签
     }
 }
 
-function compile(template) {
+
+
+function parseToken(template, parseToken = {}) {
+
     let code = template
     let nodes = []
     let matchedText = ''
     while (code) {
         let node;
+        let fn;
         code = code.trim();
+        let token;
         if (node = code.match(PreTag)) {
             matchedText = node[0]
-            nodes.push(new Token('PreTag', matchedText))
+            token = new Token('PreTag', matchedText)
+            fn = parseToken.start
         } else if (node = code.match(TEXT)) {
             matchedText = node[0].trim()
-            nodes.push(new Token('TEXT', matchedText))
+            token = new Token('TEXT', matchedText, true)
+            fn = parseToken.start
         } else if (node = code.match(PreBlock)) {
             matchedText = node[0]
-            nodes.push(new Token('PreBlock', matchedText))
-        } else if (node = code.match(EndBlock)) {
-            matchedText = node[0]
-            nodes.push(new Token('EndBlock', matchedText))
+            token = new Token('PreBlock', matchedText)
+            fn = parseToken.start
         } else if (node = code.match(EqualBlock)) {
             matchedText = node[0]
-            nodes.push(new Token('EqualBlock', matchedText))
+            token = new Token('EqualBlock', matchedText, true)
+            fn = parseToken.start
+        } else if (node = code.match(EndBlock)) {
+            matchedText = node[0]
+            token = new Token('EndBlock', matchedText)
+            fn = parseToken.end
         } else if (node = code.match(EndTag)) {
             matchedText = node[0]
-            nodes.push(new Token('EndTag', matchedText))
+            token = new Token('EndTag', matchedText)
+            fn = parseToken.end
         }
+        fn(token)
+        nodes.push(token)
         code = code.slice(matchedText.length)
         node = null
     }
     return nodes
-
-}
-
-
-function parseEqualBlock(tokens) {
-    const [node, eTokens] = eat('EqualBlock', tokens)
-    const variable = node.value.match(EqualBlock)
-    return [{
-        type: 2,
-        item: variable[1]
-    }, eTokens]
-}
-
-function parseBlock(tokens, parent) {
-    debugger
-    let tailTokens = tokens;
-    let blocks = []
-    while (check('PreBlock', tailTokens) || check('EqualBlock', tailTokens) || check('PreTag', tailTokens)) {
-        let block = {
-            type: 2,
-            children: []
-        }
-        let eBlock
-        let node;
-        if (check('PreBlock', tailTokens)) {
-            [node, tailTokens] = eat('PreBlock', tailTokens)
-            const condition = node.value.match(Condition)
-            block.tag = condition[1]
-            block.item = condition[2]
-        }
-        if (check('PreTag', tailTokens)) {
-            [eBlock, tailTokens] = parseTag(tailTokens, block)
-            block.children.push(eBlock)
-        }
-
-        if (check('EqualBlock', tailTokens)) {
-            [eBlock, tailTokens] = parseEqualBlock(tailTokens)
-            block.children.push(eBlock)
-        }
-        if (check('EndBlock', tailTokens)) {
-            [, tailTokens] = eat('EndBlock', tailTokens)
-        }
-        blocks.push(block)
-    }
-
-    return [blocks, tailTokens]
-}
-
-function parseTag(tokens, parent) {
-    debugger
-    let tailTokens = tokens;
-    let tags = []
-    while (check('PreTag', tailTokens) || check('EndTag', tailTokens) || check('TEXT', tailTokens) || check('PreBlock', tailTokens)) {
-        let tag = {
-            type: 1,
-            text: '',
-            children: []
-        }
-        let node;
-        if (check('PreTag', tailTokens)) {
-            [node, tailTokens] = eat('PreTag', tailTokens);
-            if (node.value === "<span>") {
-                console.log(parent)
-                debugger
-            }
-            tag.text = node.value;
-        }
-        if (check('PreBlock', tailTokens)) {
-            let nChildren = [];
-            [nChildren, tailTokens] = parseBlock(tailTokens, tag);
-            tag.children = tag.children.concat(nChildren)
-        }
-        if (check('TEXT', tailTokens)) {
-            let nChildren = [];
-            [nChildren, tailTokens] = eat('TEXT', tailTokens)
-            tag.children.push({
-                type: 3,
-                item: nChildren.value
-            })
-        }
-        if (check('EndTag', tailTokens)) {
-            [, tailTokens] = eat('EndTag', tailTokens)
-        }
-        tags.push(tag)
-    }
-    return [tags, tailTokens]
 }
 
 
 export function parse(template) {
-    const tokens = compile(template)
-    let [node] = parseTag(tokens)
-    console.log(node)
-}
+    let stacks = []
+    let currentParentToken
+    let root
+    const tokens = parseToken(template, {
+        start(token) {
+            let type = TokenType[token.type];
+            let ast = {
+                type,
+                children: []
+            }
+            if (type === 1) {
+                ast.text = token.value
+            } else if (type === 2) {
+                const condition = token.value.match(Condition)
+                if (Array.isArray(condition) && condition.length > 1) {
+                    ast.tag = condition[1]
+                    ast.item = condition[2]
+                } else {
+                    ast.item = token.value
+                }
+            }
+            if (!root) {
+                root = ast
+            } else if (currentParentToken) {
+                currentParentToken.children.push(ast)
+            }
 
-function eat(type, tokens) {
-    if (!tokens) {
-        throw new Error('没token 可eat了 ' + type)
-    }
-    if (tokens.length && tokens[0].type === type) {
-        return [tokens[0], tokens.slice(1)]
-    }
-    throw new Error('this first node type is not ' + type + ' in template  eat method')
-}
-
-
-function check(type, tokens) {
-    return tokens.length && tokens[0].type === type
+            if (!token.unary) {
+                currentParentToken = ast
+                stacks.push(currentParentToken)
+            }else{
+                delete  ast.children
+            }
+        },
+        end(token) {
+            stacks.pop()
+            currentParentToken = stacks[stacks.length - 1]
+        }
+    })
+    return {
+        ast:root,
+        tokens
+    };
 }

@@ -8,22 +8,32 @@
 <body>
 
     <script type="module">
-        import { parse } from '../lib/template-exporer.js'
+        import { parse, compile } from '../lib/template-exporer.js'
+        // const template=`
+        //     <div>
+        //         <% if (test > 1 ) { %>
+        //             <span>
+        //                 <%= test %>
+        //             </span>
+        //         <% } %>
+        //         <div>
+        //             hello world
+        //         </div>
+        //     </div>
+        // `
         const template=`
             <div>
             <% if (test > 1 ) { %>
-                <span>
-                    <%= test %>
-                </span>
+                <%= test %>
             <% } %>
                 <div>
                     hello world
                 </div>
             </div>
         `
-        let result =parse(template)
-
-        console.log(result)
+        let {ast} =parse(template)
+        // result = compile(result)
+        console.log(ast)
     </script>
 </body>
 </html>
