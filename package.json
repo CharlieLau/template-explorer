@@ -1,0 +1,36 @@
+{
+  "name": "template-explorer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "serve": "SERVE=true rollup -c -w",
+    "test":"mocha -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CharlieLau/template-explorer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "browserslist": [
+    "last 10 Chrome major  versions"
+  ],
+  "bugs": {
+    "url": "https://github.com/CharlieLau/template-explorer/issues"
+  },
+  "homepage": "https://github.com/CharlieLau/template-explorer#readme",
+  "dependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/preset-env": "^7.9.5",
+    "mocha": "^7.1.1",
+    "rollup": "^2.6.1",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-serve": "^1.0.1"
+  }
+}

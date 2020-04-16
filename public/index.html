@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <script type="module">
+        import { parse } from '../lib/template-exporer.js'
+        const template=`
+            <div>
+            <% if (test > 1 ) { %>
+                <span>
+                    <%= test %>
+                </span>
+            <% } %>
+                <div>
+                    hello world
+                </div>
+            </div>
+        `
+        let result =parse(template)
+
+        console.log(result)
+    </script>
+</body>
+</html>
