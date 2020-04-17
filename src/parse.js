@@ -6,14 +6,12 @@ const PreTag = /^\<\w+.*\>/
 const EndTag = /^\<\/\w+.*\>/
 
 const Condition = /<%(?:\s?)+(\w+)(?:\s?)+\((.*)\).*%>/
-const TokenType = {
+export  const TokenType = {
     PreBlock: 2,
     PreTag: 1,
     EqualBlock: 2,
-    text2: 3
+    TEXT: 3
 }
-
-
 
 class Token {
     constructor(type, value = '', unary = false) {
@@ -23,10 +21,7 @@ class Token {
     }
 }
 
-
-
-function parseToken(template, parseToken = {}) {
-
+export function parseToken(template, parseToken = {}) {
     let code = template
     let nodes = []
     let matchedText = ''
@@ -73,11 +68,13 @@ export function parse(template) {
     let stacks = []
     let currentParentToken
     let root
+
     const tokens = parseToken(template, {
         start(token) {
             let type = TokenType[token.type];
             let ast = {
                 type,
+                unary: token.unary,
                 children: []
             }
             if (type === 1) {
@@ -100,8 +97,8 @@ export function parse(template) {
             if (!token.unary) {
                 currentParentToken = ast
                 stacks.push(currentParentToken)
-            }else{
-                delete  ast.children
+            } else {
+                delete ast.children
             }
         },
         end(token) {
@@ -110,7 +107,7 @@ export function parse(template) {
         }
     })
     return {
-        ast:root,
+        ast: root,
         tokens
     };
 }

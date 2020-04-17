@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
 
     <script type="module">
@@ -23,17 +25,25 @@
         // `
         const template=`
             <div>
-            <% if (test > 1 ) { %>
-                <%= test %>
-            <% } %>
+                <% if (test > 1 ) { %>
+                    <%= test %>
+                <% } %>
+                <% for(let i=0;i<10;i++) { %>
+                    <span>
+                        <% = i %>
+                    </span>
+                <% } %>
                 <div>
                     hello world
                 </div>
             </div>
         `
-        let {ast} =parse(template)
-        // result = compile(result)
-        console.log(ast)
+        // let {ast} =parse(template)
+        let result = compile(template,{
+           test:3
+        })
+        console.log(result)
     </script>
 </body>
+
 </html>
