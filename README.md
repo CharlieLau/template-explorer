@@ -55,7 +55,7 @@ export default {
 大致过程
 >  template-> split = `lines` -> compile = function +data -> `string` -> innerHTML = dom
 
-要实现如下的语法:
+要实现如下的模板:
 ```html
 <div>
     <% if (test > 1 ) { %>
@@ -99,16 +99,84 @@ code += `
 const fn = new Function('obj',`return ${code}`)
 fn.call(scope)
 ```
-参考：
-* https://johnresig.com/blog/javascript-micro-templating/
-* https://github.com/whxaxes/mus
-* https://github.com/yanhaijing/template.js
 
 
 # dom base
 参考 Vue的渲染
-> template -> parse = AST -> data + render function  -> vitual dom  -> dom
+> template -> parse = AST -> compile=> data + render function => vitual dom  -> dom
+
+要实现这样的模板:
+``` html
+<div id="app" >
+    <p>{{name}}</p>
+    <span>年龄:{{age}}</span>
+</div>
+
+
+```
+首先转换成AST:
+``` javascript
+{
+    tag:'div',
+    type:1,
+    attrs: {
+        id:'app'
+    },
+    children:[{
+        tag:'p',
+        type:1,
+        children:[{
+            type:3,
+            text:'{{name}}'
+        }]
+    },{
+        tag:'span',
+        type:1,
+        children:[{
+            type:3,
+            text:'年龄:'
+        },{
+            type:3,
+            text:'{{age}}'
+        }]
+    }]
+}
+```
+compile render函数：
+```javascript
+// 函数体
+const code = _c('div',{id:'app'},_c("p",undefined,_v('年龄:'+_s(name))),_s(age))
+
+// 主函数
+function render() {
+  with(this) {
+    return _c('div', {
+      attrs: {
+        "id": "app"
+      }
+    }, [_c('p', [_v(_s(name))]), _c('span', [_v("年龄:" + _s(age))])])
+  }
+}
+
+```
+然后在`渲染Watcher` 通过render函数，解析成vnode,创建真实dom, 再次视图更新通过dom diff部分更新dom节点:
+
+```
+_c :createElement
+_v: createTextNode
+_s: stringify
+```
+dom diff
+Vue的diff算法是基于snabbdom改造过来的,Vue的diff算法是`同级的vnode间做diff`，递归地进行同级vnode的diff，最终实现整个DOM树的更新.
+
+patch函数会维护oldStart+oldEnd，newStart+newEnd这样2对指针，分别对应oldVdom和newVdom的起点和终点。起止点之前的节点是待处理的节点，Vue不断对vnode进行处理同时移动指针直到其中任意一对起点和终点相遇。处理过的节点Vue会在oldVdom和newVdom中同时将它标记为已处理。Vue通过以下措施来提升diff的性能。
 
 
 
 
+参考：
+* https://johnresig.com/blog/javascript-micro-templating/
+* https://github.com/whxaxes/mus
+* https://github.com/yanhaijing/template.js
+* https://blog.csdn.net/m6i37jk/article/details/78140159
+* https://github.com/muwoo/blogs/blob/master/src/Vue/11.md
