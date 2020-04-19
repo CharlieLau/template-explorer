@@ -1,3 +1,8 @@
+import {parse} from './parse'
+import {compile} from './compile'
 
 
-export {parse} from './parse'
+export {
+    parse,
+    compile
+}
